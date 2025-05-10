@@ -1,9 +1,14 @@
-
 import streamlit as st
 import os
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
 
-OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+# Récupération sécurisée de la clé API
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
+
+if not OPENAI_API_KEY:
+    st.error("❌ Clé API OpenAI manquante. Configurez-la via st.secrets ou une variable d’environnement.")
+    st.stop()
+
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 st.set_page_config(page_title="Chatbot Juridique Selom", layout="centered")
@@ -15,9 +20,9 @@ question = st.text_area("Votre question juridique :", height=150)
 
 def obtenir_reponse(question, langue="fr"):
     prompt_systeme = (
-        "Tu es un assistant juridique expert en droit des contrats et droit informatique."
-        " Donne des réponses fiables, claires, synthétiques et adaptées à un non-juriste."
-        f" Réponds uniquement en {langue}."
+        "Tu es un assistant juridique expert en droit des contrats et droit informatique. "
+        "Donne des réponses fiables, claires, synthétiques et adaptées à un non-juriste. "
+        f"Réponds uniquement en {langue}."
     )
     try:
         reponse = client.chat.completions.create(
@@ -28,8 +33,8 @@ def obtenir_reponse(question, langue="fr"):
             ]
         )
         return reponse.choices[0].message.content
-    except Exception as e:
-        return f"⚠️ Erreur lors de la génération : {str(e)}"
+    except OpenAIError as e:
+        return f"⚠️ Erreur lors de l’appel à OpenAI : {str(e)}"
 
 if st.button("Obtenir une réponse"):
     if question.strip():
