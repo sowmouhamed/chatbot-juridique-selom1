@@ -2,48 +2,39 @@ import streamlit as st
 import os
 from openai import OpenAI, OpenAIError
 
-# Récupération sécurisée de la clé API
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
-
+# Clé API via variable d’environnement uniquement
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
-    st.error("❌ Clé API OpenAI manquante. Configurez-la via st.secrets ou une variable d’environnement.")
+    st.error("❌ Clé API OpenAI manquante. Définissez-la comme variable d’environnement.")
     st.stop()
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-st.set_page_config(page_title="Chatbot Juridique Selom", layout="centered")
-st.title("⚖️ Chatbot Juridique – Maître SELOM")
-st.markdown("Posez votre question sur le droit des contrats ou droit informatique.")
+st.title("⚖️ Chatbot Juridique Selom")
 
-langue = st.selectbox("Choisissez la langue de réponse :", ["fr", "en"])
-question = st.text_area("Votre question juridique :", height=150)
+question = st.text_area("Posez votre question juridique :")
+langue = st.selectbox("Langue :", ["fr", "en"])
 
 def obtenir_reponse(question, langue="fr"):
-    prompt_systeme = (
-        "Tu es un assistant juridique expert en droit des contrats et droit informatique. "
-        "Donne des réponses fiables, claires, synthétiques et adaptées à un non-juriste. "
+    prompt = (
+        "Tu es un assistant juridique spécialisé en droit des contrats et droit informatique. "
         f"Réponds uniquement en {langue}."
     )
     try:
-        reponse = client.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": prompt_systeme},
+                {"role": "system", "content": prompt},
                 {"role": "user", "content": question}
             ]
         )
-        return reponse.choices[0].message.content
+        return response.choices[0].message.content
     except OpenAIError as e:
-        return f"⚠️ Erreur lors de l’appel à OpenAI : {str(e)}"
+        return f"Erreur OpenAI : {str(e)}"
 
-if st.button("Obtenir une réponse"):
+if st.button("Envoyer"):
     if question.strip():
-        with st.spinner("Analyse juridique en cours..."):
-            reponse = obtenir_reponse(question, langue)
-            st.success("Réponse du chatbot :")
-            st.markdown(reponse)
+        reponse = obtenir_reponse(question, langue)
+        st.write(reponse)
     else:
-        st.warning("❗ Veuillez entrer une question.")
-
-st.markdown("---")
-st.caption("Développé pour Maître SELOM Yves Rowland – Juriste / Legal Counsel")
+        st.warning("Veuillez poser une question.")
